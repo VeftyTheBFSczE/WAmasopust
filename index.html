@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Evidenční formulář kávy</title>
     <style>
-        /* Vlastní vzhled pro lepší UX/UI */
+        
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
@@ -50,7 +50,7 @@
     </style>
 </head>
 <body>
-    <form id="coffeeForm">
+    <form id="coffeeForm" onsubmit="submitData(event)">
         <label for="person">Osoba:</label>
         <select id="person" name="person">
             <option value="Masopust Lukáš">Masopust Lukáš</option>
@@ -75,55 +75,67 @@
     </form>
 
     <button type="button" onclick="showConsumption()">Zobrazit spotřebu</button>
+    <button type="button" onclick="showMonthlySummary()">Zobrazit měsíční přehled</button>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        let consumptionData = []; 
+
+        function submitData(event) {
+            event.preventDefault(); 
+
             const form = document.getElementById('coffeeForm');
+            const formData = new FormData(form);
             
-            // Explicitně poskytnout formulář JavaScriptem
-            form.addEventListener('submit', async function(event) {
-                event.preventDefault();
-                
-                try {
-                    const formData = new FormData(form);
-                    
-                    const response = await fetch('http://ajax1.lmsoft.cz/procedure.php?cmd=saveDrinks', {
-                        method: 'POST',
-                        body: formData,
-                    });
-                    
-                    const result = await response.json();
+            
+            const data = {
+                person: formData.get('person'),
+                coffeeType: formData.get('coffeeType'),
+                quantity: formData.get('quantity')
+            };
+            consumptionData.push(data);
 
-                    if (result.success) {
-                        alert('Data byla úspěšně odeslána!');
-                    } else {
-                        alert('Došlo k chybě při odesílání dat.');
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    alert('Došlo k chybě při odesílání dat.');
-                }
-            });
+            alert('Data byla úspěšně uložena!');
+        }
 
-            form.addEventListener('reset', function() {
-                this.reset();
-            });
-        });
+        function showConsumption() {
+            if (consumptionData.length > 0) {
+                let output = '<h2>Seznam vypité kávy</h2><ul>';
+                consumptionData.forEach(item => {
+                    output += `<li>${item.person} vypil ${item.quantity} ml ${item.coffeeType}</li>`;
+                });
+                output += '</ul>';
+                document.body.innerHTML += output;
+            } else {
+                alert('Nebyly nalezeny žádné záznamy.');
+            }
+        }
 
-        async function showConsumption() {
+        async function showMonthlySummary() {
+            const month = prompt('Zadejte číslo měsíce (1-12):');
+            if (month < 1 || month > 12) {
+                alert('Neplatné číslo měsíce!');
+                return;
+            }
+
+            const auth = 'Basic ' + btoa('cafe:cafe'); 
+
             try {
-                const response = await fetch('http://ajax1.lmsoft.cz/procedure.php?cmd=listDrinks');
+                const response = await fetch(`http://ajax1.lmsoft.cz/procedure.php?cmd=getSummaryOfDrinks&month=${month}`, {
+                    headers: {
+                        'Authorization': auth
+                    }
+                });
                 const data = await response.json();
 
-                let output = '<h2>Seznam vypité kávy</h2><ul>';
+                let output = `<h2>Měsíční přehled pro měsíc ${month}</h2><ul>`;
                 data.forEach(item => {
-                    output += `<li>${item.person} vypil ${item.quantity} ml ${item.coffeeType}</li>`;
+                    output += `<li>${item.person} vypil celkem ${item.totalQuantity} ml kávy</li>`;
                 });
                 output += '</ul>';
                 document.body.innerHTML += output;
             } catch (error) {
                 console.error('Error:', error);
-                alert('Došlo k chybě při zobrazení seznamu vypité kávy.');
+                alert('Došlo k chybě při zobrazení měsíčního přehledu.');
             }
         }
     </script>

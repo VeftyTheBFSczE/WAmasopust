@@ -1,0 +1,52 @@
+<html>
+	<head>
+		<title>Websocket Example</title>
+		<style>
+			body { margin: 0px; overflow:hidden }
+		</style>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+        <script type="text/javascript">
+        $(document).ready(function() {
+        console.log('stzasrt.');
+    var ws = new WebSocket('ws://lm:8080');
+
+    ws.onopen = function() {
+        console.log('WebSocket is connected.');
+        var dataToSend = {
+            message: 'Hello, server!'
+        };
+        ws.send(JSON.stringify(dataToSend));
+        
+    };
+
+    ws.onmessage = function(event) {
+        var receivedData = JSON.parse(event.data);
+        console.log('Received from server: ', receivedData);
+        
+    };
+
+    ws.onerror = function(error) {
+        console.log('WebSocket Error: ' + error);
+    };
+
+    ws.onclose = function() {
+        console.log('WebSocket connection closed.');
+    };
+    ///////////////ws
+    
+    $('#lm1').click(function() {
+    
+        ws.send(JSON.stringify("lm1 zdravi"));
+    
+    } );
+    
+    
+});
+</script>
+	
+	</head>
+	<body>
+		<input type="button" id="lm1" value="test">
+	</body>
+</html>

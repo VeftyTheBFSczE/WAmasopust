@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title>Evidenční formulář kávy</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        form {
+            max-width: 400px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        @media (max-width: 600px) {
+            form {
+                padding: 10px;
+            }
+            input, select, button {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <form id="coffeeForm" onsubmit="submitData(event)">
+        <label for="person">Osoba:</label>
+        <select id="person" name="person">
+            <option value="Masopust Lukáš">Masopust Lukáš</option>
+            <option value="Molič Jan">Molič Jan</option>
+            <option value="Adámek Daniel">Adámek Daniel</option>
+            <option value="Weber David">Weber David</option>
+        </select>
+
+        <label for="coffeeType">Typ kávy:</label>
+        <select id="coffeeType" name="coffeeType">
+            <option value="Mléko">Mléko</option>
+            <option value="Espresso">Espresso</option>
+            <option value="Coffe">Coffe</option>
+            <option value="Long">Long</option>
+            <option value="Dopio++">Dopio++</option>
+        </select>
+
+        <label for="quantity">Množství (v ml):</label>
+        <input type="number" id="quantity" name="quantity" required>
+
+        <button type="submit">Odeslat</button>
+    </form>
+
+    <button type="button" onclick="showConsumption()">Zobrazit spotřebu</button>
+    <button type="button" onclick="showMonthlySummary()">Zobrazit měsíční přehled</button>
+
+    <script>
+        let consumptionData = []; 
+
+        function submitData(event) {
+            event.preventDefault(); 
+
+            const form = document.getElementById('coffeeForm');
+            const formData = new FormData(form);
+            
+            const data = {
+                person: formData.get('person'),
+                coffeeType: formData.get('coffeeType'),
+                quantity: formData.get('quantity')
+            };
+
+            // Autentizace
+            const auth = 'Basic ' + btoa('cafe:cafe'); 
+
+            // Odeslání dat na server
+            fetch('http://ajax1.lmsoft.cz/procedure.php?cmd=submitCoffeeData', {
+                method: 'POST',
+                headers: {
+                    'Authorization': auth, 
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(responseData => {
+                console.log('Úspěch:', responseData);
+                alert('Data byla úspěšně odeslána!');
+            })
+            .catch((error) => {
+                console.error('Chyba:', error);
+                alert('Došlo k chybě při odesílání dat.');
+            });
+        }
+
+        function showConsumption() {
+            if (consumptionData.length > 0) {
+                let output = '<h2>Seznam vypité kávy</h2><ul>';
+                consumptionData.forEach(item => {
+                    output += `<li>${item.person} vypil ${item.quantity} ml ${item.coffeeType}</li>`;
+                });
+                output += '</ul>';
+                document.body.innerHTML += output;
+            } else {
+                alert('Nebyly nalezeny žádné záznamy.');
+            }
+        }
+
+        async function showMonthlySummary() {
+            const month = prompt('Zadejte číslo měsíce (1-12):');
+            if (month < 1 || month > 12) {
+                alert('Neplatné číslo měsíce!');
+                return;
+            }
+
+            const auth = 'Basic ' + btoa('cafe:cafe'); 
+
+            try {
+                const response = await fetch(`http://ajax1.lmsoft.cz/procedure.php?cmd=getSummaryOfDrinks&month=${month}`, {
+                    headers: {
+                        'Authorization': auth
+                    }
+                });
+                const data = await response.json();
+
+                let output = `<h2>Měsíční přehled pro měsíc ${month}</h2><ul>`;
+                data.forEach(item => {
+                    output += `<li>${item.person} vypil celkem ${item.totalQuantity} ml kávy</li>`;
+                });
+                output += '</ul>';
+                document.body.innerHTML += output;
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Došlo k chybě při zobrazení měsíčního přehledu.');
+            }
+        }
+    </script>
+</body>
+</html>
